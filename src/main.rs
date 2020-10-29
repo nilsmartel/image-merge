@@ -116,6 +116,7 @@ fn to_rgba8(image: image::DynamicImage) -> image::RgbImage {
     }
 }
 
+// stolen from https://users.rust-lang.org/t/how-to-get-user-input/5176/8
 mod simple_user_input {
     use std::io;
     pub fn get_input(prompt: &str) -> String {
