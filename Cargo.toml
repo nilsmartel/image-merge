@@ -1,0 +1,10 @@
+[package]
+name = "image-merge"
+version = "0.1.0"
+authors = ["Nils Martel <nils.martel@graphmasters.net>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = "0.23.11"               # Imaging library written in Rust. Provides basic filters and decoders for the most common image …
