@@ -1,30 +1,22 @@
-use image::GenericImageView;
+fn get_input_files() -> impl Iterator<Item = String> {
+    std::env::args().skip(1)
+}
+
 fn main() {
-    // files to open and merge
-    let files = std::env::args().skip(1);
+    let images = get_input_files()
+        .map(|name| {
+            use image::open;
 
-    let images = files.map(|name| {
-        use image::open;
+            println!("opening image {}", &name);
+            let img = open(&name).expect(&format!("failed to open image {}", &name));
+            println!("done");
+            img
+        })
+        // assert that all images are rgba8
+        .map(to_rgba8);
 
-        println!("opening image {}", &name);
-        let img = open(&name).expect(&format!("failed to open image {}", &name));
-        println!("done");
-        img
-    });
-
-    // assert that all images are of type rgb
-    let images = images.map(to_rgba8).collect::<Vec<_>>();
-
-    let length = images.len() as f32;
-
-    // dimension of the final image
-    let dim = images[0].dimensions();
-    // verify all images have the same dimensions
-    for img in images.iter().skip(1) {
-        assert_eq!(dim, img.dimensions());
-    }
-
-    let full_image = add_images(dim, images).div(length).to_rgb8();
+    let length = get_input_files().fold(0.0, |n, _| n + 1.0);
+    let full_image = add_images(images, length as usize).div(length).to_rgb8();
 
     let filename = simple_user_input::get_input("please specify file name");
     println!("Saving file as {}", &filename);
@@ -32,12 +24,16 @@ fn main() {
     full_image.save(filename).expect("Failed to save file");
 }
 
-fn add_images(dim: (u32, u32), images: Vec<image::RgbImage>) -> Rgb32Image {
-    let max = images.len();
-
+fn add_images(mut images: impl Iterator<Item = image::RgbImage>, total: usize) -> Rgb32Image {
     // create black image, where we can add up all other images to
+    let first = images.next().unwrap();
+
+    let dim = first.dimensions();
     let mut dest = Rgb32Image::new(dim);
-    for (i, image) in images.iter().enumerate() {
+    let iter = std::iter::once(first);
+    for (i, image) in iter.chain(images).enumerate() {
+        assert_eq!(dest.dim, image.dimensions());
+
         for (index, pixel) in image.pixels().enumerate() {
             let [r, g, b] = pixel.0;
             let pxl = &mut dest.data[index];
@@ -46,8 +42,9 @@ fn add_images(dim: (u32, u32), images: Vec<image::RgbImage>) -> Rgb32Image {
             pxl.b += b as u32;
         }
 
-        println!("Processed image {:03} of {}", i, max);
+        println!("Processed image {:03} of {}", i, total);
     }
+
     dest
 }
 
