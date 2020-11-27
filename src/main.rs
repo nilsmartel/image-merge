@@ -32,6 +32,8 @@ fn add_images(mut images: impl Iterator<Item = image::RgbImage>, total: usize) -
     let mut dest = Rgb32Image::new(dim);
     let iter = std::iter::once(first);
     for (i, image) in iter.chain(images).enumerate() {
+        // because we already have the first image processed
+        let i = i + 1;
         assert_eq!(dest.dim, image.dimensions());
 
         for (index, pixel) in image.pixels().enumerate() {
