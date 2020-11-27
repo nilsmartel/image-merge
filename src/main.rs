@@ -106,6 +106,16 @@ impl Rgb32 {
 fn to_rgba8(image: image::DynamicImage) -> image::RgbImage {
     match image {
         image::DynamicImage::ImageRgb8(img) => img,
+        image::DynamicImage::ImageRgba8(img) => {
+            let (w, h) = img.dimensions();
+            let mut buffer: image::RgbImage = image::ImageBuffer::new(w, h);
+            for (dest, src) in buffer.pixels_mut().zip(img.pixels()) {
+                let src: image::Rgb<u8> = image::Rgb([src[0], src[1], src[2]]);
+                *dest = src;
+            }
+
+            buffer
+        }
         _ => {
             eprintln!("Expect image to be in rgb8 format");
             std::process::exit(1)
