@@ -117,6 +117,15 @@ fn to_rgba8(image: image::DynamicImage) -> image::RgbImage {
             }
 
             buffer
+        },
+        image::DynamicImage::ImageLuma8(img) => {
+            let (w, h) = img.dimensions();
+            let mut buffer: image::RgbImage = image::ImageBuffer::new(w, h);
+            for (dest, src) in buffer.pixels_mut().zip(img.pixels()) {
+                let src: image::Rgb<u8> = image::Rgb([src[0], src[0], src[0]]);
+                *dest = src;
+            }
+            buffer
         }
         _ => {
             eprintln!("Expect image to be in rgb8 format");
