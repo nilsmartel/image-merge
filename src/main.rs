@@ -2,6 +2,8 @@ fn get_input_files() -> impl Iterator<Item = String> {
     std::env::args().skip(1)
 }
 
+const EXPECTED_FORMAT: &str = "Expect image to be in rgb8 format";
+
 fn main() {
     let images = get_input_files()
         .map(|name| {
@@ -106,9 +108,10 @@ impl Rgb32 {
 }
 
 fn to_rgba8(image: image::DynamicImage) -> image::RgbImage {
+    use image::DynamicImage::*;
     match image {
-        image::DynamicImage::ImageRgb8(img) => img,
-        image::DynamicImage::ImageRgba8(img) => {
+        ImageRgb8(img) => img,
+        ImageRgba8(img) => {
             let (w, h) = img.dimensions();
             let mut buffer: image::RgbImage = image::ImageBuffer::new(w, h);
             for (dest, src) in buffer.pixels_mut().zip(img.pixels()) {
@@ -117,8 +120,8 @@ fn to_rgba8(image: image::DynamicImage) -> image::RgbImage {
             }
 
             buffer
-        },
-        image::DynamicImage::ImageLuma8(img) => {
+        }
+        ImageLuma8(img) => {
             let (w, h) = img.dimensions();
             let mut buffer: image::RgbImage = image::ImageBuffer::new(w, h);
             for (dest, src) in buffer.pixels_mut().zip(img.pixels()) {
@@ -127,11 +130,42 @@ fn to_rgba8(image: image::DynamicImage) -> image::RgbImage {
             }
             buffer
         }
-        _ => {
-            eprintln!("Expect image to be in rgb8 format");
-            std::process::exit(1)
+        ImageLumaA8(img) => {
+            let (w, h) = img.dimensions();
+            let mut buffer: image::RgbImage = image::ImageBuffer::new(w, h);
+            for (dest, src) in buffer.pixels_mut().zip(img.pixels()) {
+                let src: image::Rgb<u8> = image::Rgb([src[0], src[0], src[0]]);
+                *dest = src;
+            }
+            buffer
+        }
+        ImageLuma16(_) => {
+            exit(format!("Found 16-bit Luma image.\n{}", EXPECTED_FORMAT));
+        }
+        ImageLumaA16(_) => {
+            exit(format!(
+                "Found 16-bit Luma image (with alpha channel).\n{}",
+                EXPECTED_FORMAT
+            ));
+        }
+        ImageBgr8(_) => {
+            exit(format!("Found Bgr8 image.\n{}", EXPECTED_FORMAT));
+        }
+        ImageBgra8(_) => {
+            exit(format!("Found Bgra8 image.\n{}", EXPECTED_FORMAT));
+        }
+        ImageRgba16(_) => {
+            exit(format!("Found 16-bit RGBA image.\n{}", EXPECTED_FORMAT));
+        }
+        ImageRgb16(_) => {
+            exit(format!("Found 16-bit RGB image.\n{}", EXPECTED_FORMAT));
         }
     }
+}
+
+fn exit(s: impl Into<String>) -> ! {
+    eprintln!("{}", s.into());
+    std::process::exit(1);
 }
 
 // stolen from https://users.rust-lang.org/t/how-to-get-user-input/5176/8
